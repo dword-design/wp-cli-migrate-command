@@ -13,5 +13,5 @@
   ],
   "autoload": {
     "files": ["migrate-command.php"]
-  },
+  }
 }
