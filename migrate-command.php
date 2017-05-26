@@ -1,5 +1,8 @@
 <?php
 
+const DUMP_FILENAME_PREFIX = 'wp-cli-migrate-mysql-dump';
+const MYSQL_CONFIG_FILENAME_PREFIX = 'wp-cli-migrate-mysql-config';
+
 function dsn($connection) {
     return $connection['host'].'/'.$connection['database'];
 }
@@ -17,13 +20,19 @@ function migrate_db($sourceName, $targetName, $yes) {
 
     if ($yes || readline('Are you sure you want to replace data from '.dsn($target).' with data from '.dsn($source).' (y/n)? ') == 'y') {
 
-//        $dump = new \Ifsnop\Mysqldump\Mysqldump('mysql:host=' . $source['host'] . ';dbname=' . $source['database'], $source['user'], $source['password']);
         $dumpFilename = tempnam('.', DUMP_FILENAME_PREFIX);
+        $configFilename = tempnam('.', MYSQL_CONFIG_FILENAME_PREFIX);
         touch($dumpFilename);
-        exec('mysqldump --host="'.$source['host'].'" --user="'.$source['user'].'" --password="'.$source['password'].'" '.$source['database'].'> "'.$dumpFilename.'"');
-//        $dump->start($dumpFilename);
+        file_put_contents($configFilename,
+'[client]
+host = '.$source['host'].'
+user = '.$source['user'].'
+password = '.$source['password']);
+
+        exec('mysqldump --defaults-extra-file="'.$configFilename.'" '.$source['database'].'> "'.$dumpFilename.'"');
         $code = file_get_contents($dumpFilename);
         unlink($dumpFilename);
+        unlink($configFilename);
 
         $newCode = str_replace($source['domain-prefix'], $target['domain-prefix'], $code);
 
