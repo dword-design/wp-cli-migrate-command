@@ -25,11 +25,10 @@ function migrate_db($sourceName, $targetName, $yes) {
         touch($dumpFilename);
         file_put_contents($configFilename,
 '[client]
-host = '.$source['host'].'
-user = '.$source['user'].'
-password = '.$source['password']);
-
-        exec('mysqldump --defaults-extra-file="'.$configFilename.'" '.$source['database'].'> "'.$dumpFilename.'"');
+host = "'.$source['host'].'"
+user = "'.$source['user'].'"
+password = "'.$source['password'].'"');
+        exec('mysqldump --defaults-extra-file="'.$configFilename.'" '.$source['database'].' > "'.$dumpFilename.'"');
         $code = file_get_contents($dumpFilename);
         unlink($dumpFilename);
         unlink($configFilename);
@@ -38,15 +37,16 @@ password = '.$source['password']);
 
         $db = new \PDO('mysql:host=' . $target['host'], $target['user'], $target['password']);
 
-        $db->exec('DROP DATABASE ' . $target['database'] . ' IF EXISTS');
-        $db->exec('CREATE DATABASE ' . $target['database']);
-        $db->exec('USE ' . $target['database']);
+        $db->exec('DROP DATABASE `' . $target['database'] . ' IF EXISTS');
+        $db->exec('CREATE DATABASE `' . $target['database'] . '`');
+        $db->exec('USE `' . $target['database'] . '`');
         $db->exec($newCode);
     }
 };
 
 function migrate_uploads($sourceName, $targetName, $yes) {
-    $uploadsConfig = WP_CLI::get_runner()->extra_config['uploads'] ?: [];
+    $extraConfig = WP_CLI::get_runner()->extra_config;
+    $uploadsConfig = array_key_exists('uploads', $extraConfig) ? $extraConfig['uploads']: [];
     $aliases = WP_CLI::get_runner()->aliases;
 
     function getUploadsPath($alias, $uploadsConfig) {
@@ -63,7 +63,7 @@ function migrate_uploads($sourceName, $targetName, $yes) {
     $targetUploadsUrl = getUploadsUrl($targetName, $uploadsConfig, $aliases);
 
     if ($yes || readline('Are you sure you want to replace data from '.$targetUploadsUrl.' with data from '.$sourceUploadsUrl.' (y/n)? ') == 'y') {
-        passthru('rsync -a -v --delete ' . $sourceUploadsUrl . '/ ' . $targetUploadsUrl);
+        passthru('rsync -a --delete ' . $sourceUploadsUrl . '/ ' . $targetUploadsUrl);
     }
 };
 
@@ -73,13 +73,17 @@ function migrate_command($args, $assoc_args) {
 
     $sourceName = $args[0];
     $targetName = $args[1];
+    $yes = in_array('yes', $assoc_args);
 
     if ($subcommandName == 'db' || $subcommandName == null) {
-        migrate_db($sourceName, $targetName, $assoc_args['yes']);
+        migrate_db($sourceName, $targetName, $yes);
     }
     if ($subcommandName == 'up' || $subcommandName == null) {
-        migrate_uploads($sourceName, $targetName, $assoc_args['yes']);
+        migrate_uploads($sourceName, $targetName, $yes);
+    }
+    if ($subcommandName != 'db' && $subcommandName != 'up' && $subcommandName != null) {
+        throw new \RuntimeException("Migration command '$subcommandName' does not exist.");
     }
 }
 
-WP_CLI::add_command('migrate', 'migrate_command');
+WP_CLI::add_command('migrate', 'migrate_command', array('when' => 'before_wp_load'));
