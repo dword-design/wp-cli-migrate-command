@@ -1,0 +1,17 @@
+{
+  "name": "dword-design/wp-cli-migrate-command",
+  "description": "WP-CLI command to transfer a database or uploads from one connection to another.",
+  "type": "wp-cli-package",
+  "homepage": "https://github.com/dword-design/wp-cli-migrate-command",
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Sebastian Landwehr",
+      "email": "info@dword-design.de",
+      "homepage": "http://www.dword-design.de"
+    }
+  ],
+  "autoload": {
+    "files": ["migrate-command.php"]
+  },
+}
