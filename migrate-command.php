@@ -33,7 +33,7 @@ password = "'.$source['password'].'"');
         unlink($dumpFilename);
         unlink($configFilename);
 
-        $newCode = str_replace($target['domain-prefix'], $source['domain-prefix'], $code);
+        $newCode = str_replace($source['domain-prefix'], $target['domain-prefix'], $code);
 
         $db = new \PDO('mysql:host=' . $target['host'], $target['user'], $target['password']);
 
