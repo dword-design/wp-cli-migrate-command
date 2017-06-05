@@ -33,14 +33,16 @@ password = "'.$source['password'].'"');
         unlink($dumpFilename);
         unlink($configFilename);
 
-        $newCode = str_replace($source['domain-prefix'], $target['domain-prefix'], $code);
+        if (array_key_exists('domain-prefix', $source) && array_key_exists('domain-prefix', $target)) {
+            $code = str_replace($source['domain-prefix'], $target['domain-prefix'], $code);
+        }
 
         $db = new \PDO('mysql:host=' . $target['host'], $target['user'], $target['password']);
 
         $db->exec('DROP DATABASE `' . $target['database'] . ' IF EXISTS');
         $db->exec('CREATE DATABASE `' . $target['database'] . '`');
         $db->exec('USE `' . $target['database'] . '`');
-        $db->exec($newCode);
+        $db->exec($code);
     }
 };
 
